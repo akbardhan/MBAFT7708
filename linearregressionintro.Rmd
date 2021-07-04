@@ -1,0 +1,200 @@
+---
+title: "Introduction to Linear Regression"
+output: html_notebook
+---
+
+While using R, resources like data sets can be accessed from anywhere in your system and from the internet too. But for beginners, it helps to keep everything in one folder. This folder is called a 'working directory' (wd). By default, the program searches for resources and saves output from instructions in the wd. The following codes will print the name and path to the current wd. It can set a folder of your choice as the wd.   
+
+
+```{r}
+# Get and print current working directory.
+print(getwd())
+
+# Set current working directory.
+#setwd("E:\\rfiles\\exercise1") #write the path of your wd within 
+#Note the use of \\ or / in place of \ in the path.
+```
+### THE BUSINESS PROBLEM  
+Suppose that you are asked to provide advice on how to improve sales of a particular product. The company has some recent data on effect of advertisement on its sales. The data set consists of the sales of that product in 200 different markets, along with advertising spends for the product in each of those markets for three different media: TV, radio, and newspaper.   
+
+The company can control the three marketing mix variables and hope to increase sales through them. What are the best levels for advertisement budgets in these mediums?   
+
+
+The needs to be loaded on R environment before analysis. Reading CSV file is the easiest among all file formats in R. Other formats can be handled easily too. There are libraries like 'readXL' that simplify reading data from excel file formats. Our data is in CSV format.  
+
+```{r}
+mydata <- read.csv("advertising.csv")
+head(mydata) 
+#prints the first few rows of the dataset. You can view the complete dataset on a spreadsheet by double clicking on the file name in the environment window
+```
+You may not need in the dataset, the first column (i.e. variable X). It can be dropped using the following codes 
+
+```{r}
+mydata <- within(mydata, rm(X))
+```
+Inspect the dataframe as a table and print variable names. 
+```{r}
+fix(mydata)
+# outputting data column names
+names(mydata)
+# outputting data
+write.table(mydata)
+```
+Search if the data has any missing values. Many procedures do not work if the data has missing values or special instructions need to be given when they are present.
+```{r}
+##Number of missing values (NAs) in the dataframe
+sum(is.na(mydata))
+## Identify NAs in full data frame
+#is.na(mydata)
+## Identify NAs in specific data frame column
+#is.na(mydata$TV)
+##To compute the total missing values in each column is to use colSums()
+#colSums(is.na(mydata))
+##Simple ways to deal with missing value https://uc-r.github.io/missing_values 
+```
+Now the data is ready for analysis. It is always a good idea to start with exploratory data analysis techniques. 
+```{r}
+#To print the variable names and type of data under each variable
+str(mydata)
+```
+```{r}
+# Plot the data for each column to get a feel for it
+# as well as a histogram to see the data distribution
+#loading packages
+require("ggplot2")
+
+plot(mydata$Sales)
+hist(mydata$Sales)
+
+plot(mydata$TV)
+hist(mydata$TV)
+plot(mydata$TV, mydata$Sales)
+
+plot(mydata$Radio)
+hist(mydata$Radio)
+plot(mydata$Radio, mydata$Sales)
+
+plot(mydata$Newspaper)
+hist(mydata$Newspaper)
+plot(mydata$Newspaper, mydata$Sales)
+```
+
+For descriptive statistics, the function 'summary' can be used. The package 'pastecs' is used below for a more detailed output. Do check for missing values and type of variable (must be numeric). 
+```{r}
+# Compute descriptive statistics
+library(pastecs)
+res <- stat.desc(mydata)
+round(res, 2)
+```
+
+```{r}
+# Correlation matrix and respective p-values
+library("Hmisc")
+res2 <- rcorr(as.matrix(mydata))
+res2
+```
+
+
+Evaluate the linear relationship between two variables by building simple linear regression model
+```{r}
+fit1 <- lm(Sales~TV, data = mydata)
+summary(fit1)
+confint(fit1) #Confidence interval estimates
+
+qplot(mydata$TV, mydata$Sales)
+
+plot(fit1)
+```
+
+```{r}
+# Multiple Linear Regression
+lm.fit=lm(Sales ~ TV + Radio + Newspaper, data = mydata)
+summary(lm.fit)
+```
+
+```{r}
+library(car)
+vif(lm.fit)
+```
+
+```{r}
+sales_pred <- predict(lm.fit)
+head(sales_pred)
+sales_resid <- residuals(lm.fit)
+head(sales_resid)
+
+```
+
+
+### Using Regression as a Machine Learning / Supervised Learning Tool
+```{r}
+library(dplyr)
+set.seed(2)
+mydata_train <- mydata %>%
+ mutate(id = row_number()) %>%
+ sample_frac(size = 0.8) #Allots 80% of the rows to train data sets
+mydata_test <- mydata %>%
+ mutate(id = row_number()) %>%
+ # return all rows from mydata where there are not matching values in mydata_train, keeping just
+ # columns from mydata.
+ anti_join(mydata_train, by = 'id') #Remaining 20% is in test dataset
+```
+
+Now fit the regression model with the train dateset
+```{r}
+model_train <- lm(Sales ~ TV + Radio + Newspaper, data = mydata_train)
+model_train_summ <- summary(model_train)
+model_train_summ$r.squared
+```
+
+```{r}
+y_test <- mydata_test$Sales
+yhat_test <- predict(model_train, newdata = mydata_test)
+n_test <- length(mydata_test$Sales)
+# test RMSE
+rmse <- sqrt(sum((y_test - yhat_test)^2) / n_test)
+rmse
+```
+
+```{r}
+y_train <- mydata_train$Sales
+yhat_train <- predict(model_train, newdata = mydata_train)
+n_train <- length(mydata_train$Sales)
+# train RMSE
+sqrt(sum((y_train - yhat_train)^2) / n_train)
+```
+Try doing this analysis, starting with one predictor variables. Then sequentially add or drop variables till you find the best combination of predictor variables. Is this the best way to find the bext regression model?
+
+
+### Regression diagnostics 1
+
+```{r}
+qqnorm(lm.fit$residuals)
+qqline(lm.fit$residuals)
+
+```
+#### Note that in Normal Q-Q plot residuals are very close to the straight line. Hence, we can conclude that Normality Assumption is followed considering the size of dataset.
+
+## Testing for the assumption of Homoscedasticity. 
+### Null hypothesis : Residuals are homoscedastic.
+### Alternate hypothesis : Residuals are not homoscedastic.
+
+```{r}
+lmtest::bptest(lm.fit)  # Breusch-Pagan test
+car::ncvTest(lm.fit)
+```
+
+### Testing for assumption of non auto-correlation
+#### Null hypothesis : Residuals have zero auto-correlation.
+
+
+Are there unusual observations? Interpret and discuss.
+
+```{r}
+#Single variable analysis through box-plots
+outlier_values <- boxplot.stats(mydata$Sales)$out  # outlier values.
+outlier_values
+boxplot(mydata$Sales, main="Sales", boxwex=0.1)
+mtext(paste("Outliers: ", paste(outlier_values, collapse=", ")), cex=0.6)
+```
+### Data sets can sometimes contain outliers that are suspected to be anomalies (perhaps because of data collection errors or just plain old flukes). If outliers are present, the whisker on the appropriate side is drawn to 1.5 * Inter Quartile Range (IQR) rather than the data minimum or the data maximum. Small circles or unfilled dots are drawn on the chart to indicate where suspected outliers lie. Filled circles are used for known outliers. (http://r-statistics.co/Outlier-Treatment-With-R.html)
