@@ -1,5 +1,5 @@
 ---
-title: "Introduction to Linear Regression"
+title: "Introduction to Multiple Linear Regression"
 output: html_notebook
 ---
 
