@@ -1,18 +1,20 @@
 ---
-title: "Introduction to Multiple Linear Regression"
+title: "Introduction to Multiple Linear Regression with R"
 output: html_notebook
 ---
+This file contains R-codes to run multiple regression on a clean dataset. It assumes minimal prior knowledge of R. To use it directly, download and run this file in R-Studio (with R already installed in the machine). Remeber to change the file names / paths etc. wherever required. Let's get started.  
 
-While using R, resources like data sets can be accessed from anywhere in your system and from the internet too. But for beginners, it helps to keep everything in one folder. This folder is called a 'working directory' (wd). By default, the program searches for resources and saves output from instructions in the wd. The following codes will print the name and path to the current wd. It can set a folder of your choice as the wd.   
+While using R, resources like data sets can be accessed from anywhere in your system and from the internet too. But for beginners, it helps to keep everything in one folder. This folder is called a 'working directory' (wd). By default, the program searches for resources and saves output from instructions in the wd. The following codes will print the name and path to the current wd. It can set a folder of your choice as the wd.     
 
+Note thet if a line starts with '#' within a code chunk (as in the one below) it will not be executed. The line if treated as as a comment or text.  
 
 ```{r}
 # Get and print current working directory.
 print(getwd())
 
 # Set current working directory.
-#setwd("E:\\rfiles\\exercise1") #write the path of your wd within 
-#Note the use of \\ or / in place of \ in the path.
+#setwd("E:\\rfiles\\exercise1") #write the path of your wd within " " 
+#Note the use of \\ or / in place of \ in the path. Relevant for windows systems
 ```
 ### THE BUSINESS PROBLEM  
 Suppose that you are asked to provide advice on how to improve sales of a particular product. The company has some recent data on effect of advertisement on its sales. The data set consists of the sales of that product in 200 different markets, along with advertising spends for the product in each of those markets for three different media: TV, radio, and newspaper.   
