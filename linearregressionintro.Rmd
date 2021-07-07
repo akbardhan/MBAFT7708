@@ -2,7 +2,7 @@
 title: "Introduction to Multiple Linear Regression with R"
 output: html_notebook
 ---
-This file contains R-codes to run multiple regression on a clean dataset. It assumes minimal prior knowledge of R. To use it directly, download and run this file in R-Studio (with R already installed in the machine). Remeber to change the file names / paths etc. wherever required. Let's get started.  
+This file contains R-codes to run multiple regression on a clean dataset. It assumes minimal prior knowledge of R. To use it directly, download and run this file in R-Studio (with R already installed in the machine). Remeber to change the file names / paths etc. wherever required. Let's get started.    
 
 While using R, resources like data sets can be accessed from anywhere in your system and from the internet too. But for beginners, it helps to keep everything in one folder. This folder is called a 'working directory' (wd). By default, the program searches for resources and saves output from instructions in the wd. The following codes will print the name and path to the current wd. It can set a folder of your choice as the wd.     
 
