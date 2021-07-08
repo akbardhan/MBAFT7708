@@ -1,8 +1,10 @@
 ---
 title: "Introduction to Multiple Linear Regression with R"
 output: html_notebook
+editor_options: 
+  chunk_output_type: inline
 ---
-This file contains R-codes to run multiple regression on a clean dataset. It assumes minimal prior knowledge of R. To use it directly, download and run this file in R-Studio (with R already installed in the machine). Remeber to change the file names / paths etc. wherever required. Let's get started.    
+This file contains R-codes to run multiple regression on a clean dataset. It assumes minimal prior knowledge of R. To use it directly, download and run this file in R-Studio (with R already installed in the machine). Remeber to change the file names / paths etc. wherever required.    
 
 While using R, resources like data sets can be accessed from anywhere in your system and from the internet too. But for beginners, it helps to keep everything in one folder. This folder is called a 'working directory' (wd). By default, the program searches for resources and saves output from instructions in the wd. The following codes will print the name and path to the current wd. It can set a folder of your choice as the wd.     
 
@@ -19,10 +21,10 @@ print(getwd())
 ### THE BUSINESS PROBLEM  
 Suppose that you are asked to provide advice on how to improve sales of a particular product. The company has some recent data on effect of advertisement on its sales. The data set consists of the sales of that product in 200 different markets, along with advertising spends for the product in each of those markets for three different media: TV, radio, and newspaper.   
 
-The company can control the three marketing mix variables and hope to increase sales through them. What are the best levels for advertisement budgets in these mediums?   
+The company can control the three marketing mix variables and hope to increase sales through them. What are the best levels for advertisement in these mediums?   
 
 
-The needs to be loaded on R environment before analysis. Reading CSV file is the easiest among all file formats in R. Other formats can be handled easily too. There are libraries like 'readXL' that simplify reading data from excel file formats. Our data is in CSV format.  
+The data needs to be loaded on R environment before analysis. Reading CSV file is the easiest among all file formats in R. Other formats can be handled easily too. There are libraries like 'readXL' that simplify reading data from excel file formats. Our data is in CSV format.  
 
 ```{r}
 mydata <- read.csv("advertising.csv")
@@ -52,16 +54,18 @@ sum(is.na(mydata))
 #is.na(mydata$TV)
 ##To compute the total missing values in each column is to use colSums()
 #colSums(is.na(mydata))
-##Simple ways to deal with missing value https://uc-r.github.io/missing_values 
+##Simple ways to deal with missing value https://uc-r.github.io/missing_values
+# Fastest way to remove na - remove all rows with na
+#mydata <- na.omit(mydata)
 ```
 Now the data is ready for analysis. It is always a good idea to start with exploratory data analysis techniques. 
 ```{r}
 #To print the variable names and type of data under each variable
 str(mydata)
 ```
+Plot the data for each column to get a feel for it as well as a histogram to see the data distribution
 ```{r}
-# Plot the data for each column to get a feel for it
-# as well as a histogram to see the data distribution
+# 
 #loading packages
 require("ggplot2")
 
@@ -88,7 +92,7 @@ library(pastecs)
 res <- stat.desc(mydata)
 round(res, 2)
 ```
-
+Pearson's linear correlation coefficient measures the extent of linear relationship between two variables. 
 ```{r}
 # Correlation matrix and respective p-values
 library("Hmisc")
@@ -97,23 +101,26 @@ res2
 ```
 
 
-Evaluate the linear relationship between two variables by building simple linear regression model
+Evaluate the linear relationship further between two variables by building simple linear regression model
 ```{r}
 fit1 <- lm(Sales~TV, data = mydata)
 summary(fit1)
 confint(fit1) #Confidence interval estimates
 
-qplot(mydata$TV, mydata$Sales)
+plot(mydata$TV, mydata$Sales)
+abline(lm(mydata$Sales~mydata$TV),col='red')
 
 plot(fit1)
 ```
-
+Estimate the multiple linear regression model. 
 ```{r}
 # Multiple Linear Regression
 lm.fit=lm(Sales ~ TV + Radio + Newspaper, data = mydata)
 summary(lm.fit)
 ```
 
+Verify the if the use of multiple linear regression is correct. For this, check the assumptions on multicollinearity, normality of residuals, homeskedasticity etc. are corect. 
+VIF is the variance infation factor. It provides information of possible multicollineaity
 ```{r}
 library(car)
 vif(lm.fit)
@@ -126,6 +133,38 @@ sales_resid <- residuals(lm.fit)
 head(sales_resid)
 
 ```
+### Regression diagnostics 1
+
+```{r}
+qqnorm(lm.fit$residuals)
+qqline(lm.fit$residuals)
+
+```
+#### Note that in Normal Q-Q plot residuals are very close to the straight line. Hence, we can conclude that Normality Assumption is followed considering the size of dataset.
+
+## Testing for the assumption of Homoscedasticity. 
+### Null hypothesis : Residuals are homoscedastic.
+### Alternate hypothesis : Residuals are not homoscedastic.
+
+```{r}
+lmtest::bptest(lm.fit)  # Breusch-Pagan test
+car::ncvTest(lm.fit)
+```
+
+### Testing for assumption of non auto-correlation
+#### Null hypothesis : Residuals have zero auto-correlation.
+
+
+Are there unusual observations? Interpret and discuss.
+
+```{r}
+#Single variable analysis through box-plots
+outlier_values <- boxplot.stats(mydata$Sales)$out  # outlier values.
+outlier_values
+boxplot(mydata$Sales, main="Sales", boxwex=0.1)
+mtext(paste("Outliers: ", paste(outlier_values, collapse=", ")), cex=0.6)
+```
+Data sets can sometimes contain outliers that are suspected to be anomalies (perhaps because of data collection errors or just plain old flukes). If outliers are present, the whisker on the appropriate side is drawn to 1.5 * Inter Quartile Range (IQR) rather than the data minimum or the data maximum. Small circles or unfilled dots are drawn on the chart to indicate where suspected outliers lie. Filled circles are used for known outliers. (http://r-statistics.co/Outlier-Treatment-With-R.html)
 
 
 ### Using Regression as a Machine Learning / Supervised Learning Tool
@@ -168,35 +207,3 @@ sqrt(sum((y_train - yhat_train)^2) / n_train)
 Try doing this analysis, starting with one predictor variables. Then sequentially add or drop variables till you find the best combination of predictor variables. Is this the best way to find the bext regression model?
 
 
-### Regression diagnostics 1
-
-```{r}
-qqnorm(lm.fit$residuals)
-qqline(lm.fit$residuals)
-
-```
-#### Note that in Normal Q-Q plot residuals are very close to the straight line. Hence, we can conclude that Normality Assumption is followed considering the size of dataset.
-
-## Testing for the assumption of Homoscedasticity. 
-### Null hypothesis : Residuals are homoscedastic.
-### Alternate hypothesis : Residuals are not homoscedastic.
-
-```{r}
-lmtest::bptest(lm.fit)  # Breusch-Pagan test
-car::ncvTest(lm.fit)
-```
-
-### Testing for assumption of non auto-correlation
-#### Null hypothesis : Residuals have zero auto-correlation.
-
-
-Are there unusual observations? Interpret and discuss.
-
-```{r}
-#Single variable analysis through box-plots
-outlier_values <- boxplot.stats(mydata$Sales)$out  # outlier values.
-outlier_values
-boxplot(mydata$Sales, main="Sales", boxwex=0.1)
-mtext(paste("Outliers: ", paste(outlier_values, collapse=", ")), cex=0.6)
-```
-### Data sets can sometimes contain outliers that are suspected to be anomalies (perhaps because of data collection errors or just plain old flukes). If outliers are present, the whisker on the appropriate side is drawn to 1.5 * Inter Quartile Range (IQR) rather than the data minimum or the data maximum. Small circles or unfilled dots are drawn on the chart to indicate where suspected outliers lie. Filled circles are used for known outliers. (http://r-statistics.co/Outlier-Treatment-With-R.html)
